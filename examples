@@ -1,0 +1,100 @@
+class Button extends React.Component {
+
+    handleClick = () => {
+        this.props.onClickEvent(this.props.increments);
+    }
+
+    render() {
+        return (
+            <button onClick={this.handleClick}>+{this.props.increments}</button>
+        );
+    };
+};
+
+const Result = (props) => {
+    return (
+        <div>{props.value}</div>
+    );
+};
+
+class App extends React.Component {
+
+    state = {counter: 0};
+
+    incrementValue = (increments) => {
+        this.setState((prevState) => ({counter: prevState.counter + increments}));
+    }
+
+    render() {
+        return (
+            <div>
+                <Button increments={5} onClickEvent={this.incrementValue}/>
+                <Button increments={10} onClickEvent={this.incrementValue}/>
+                <Button increments={15} onClickEvent={this.incrementValue}/>
+                <Button increments={20} onClickEvent={this.incrementValue}/>
+                <Result value={this.state.counter}/>
+            </div>
+        );
+    }
+};
+
+ReactDOM.render(<App/>, mountNode);
+
+<!-- -->
+
+let data = [
+    {
+        name: "Esteban Ruiz",
+        company_name: 'TeravisionTech',
+        avatar_url: "https://avatars1.githubusercontent.com/u/22457332?v=4"
+    },
+    {
+        name: "Esteban Castillo",
+        company_name: 'TeravisionTech',
+        avatar_url: "https://avatars1.githubusercontent.com/u/22457332?v=4"
+    }
+];
+
+const Card = (props) => {
+    return (
+        <div>
+            <img src={props.avatar_url} alt=""/>
+            <div className="info-holder">
+                <div className="name">{props.name}</div>
+                <div>{props.company_name}</div>
+            </div>
+        </div>
+    );
+};
+
+const CardList = (props) => {
+    return (
+        <div>
+            {props.cards.map(card => <Card {...card} />)}
+        </div>
+    );
+};
+
+class Form extends React.Component {
+    render() {
+        return (
+            <form>
+                <input type="text" name="username" placeholder="Search username"/>
+                <button type="submit">Search</button>
+            </form>
+        );
+    }
+}
+
+class App extends React.Component {
+    render() {
+        return (
+            <div>
+                <Form/>
+                <CardList cards={data}/>
+            </div>
+        );
+    }
+}
+
+ReactDOM.render(<App/>, mountNode);
