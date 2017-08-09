@@ -42,26 +42,13 @@ ReactDOM.render(<App/>, mountNode);
 
 <!-- -->
 
-let data = [
-    {
-        name: "Esteban Ruiz",
-        company_name: 'TeravisionTech',
-        avatar_url: "https://avatars1.githubusercontent.com/u/22457332?v=4"
-    },
-    {
-        name: "Esteban Castillo",
-        company_name: 'TeravisionTech',
-        avatar_url: "https://avatars1.githubusercontent.com/u/22457332?v=4"
-    }
-];
-
 const Card = (props) => {
     return (
         <div>
             <img src={props.avatar_url} alt=""/>
             <div className="info-holder">
                 <div className="name">{props.name}</div>
-                <div>{props.company_name}</div>
+                <div>{props.company}</div>
             </div>
         </div>
     );
@@ -76,12 +63,206 @@ const CardList = (props) => {
 };
 
 class Form extends React.Component {
+state = {userName: ''};
+
+handleSubmit = (event) => {
+	event.preventDefault();
+  axios.get(`https://api.github.com/users/${this.state.userName}`).then((resp)=>{this.props.onSubmit(resp.data)});
+  this.setState({userName: ''});
+}
+
     render() {
         return (
-            <form>
-                <input type="text" name="username" placeholder="Search username"/>
+            <form onSubmit={(event) => {this.handleSubmit(event)}}>
+                <input value={this.state.userName} onChange={(event) => {this.setState({userName: event.target.value})}} type="text" name="username" placeholder="Search username"/>
                 <button type="submit">Search</button>
             </form>
+        );
+    }
+}
+
+class App extends React.Component {
+state = {cards: []}
+
+addNewCard = (card) =>{
+	this.setState(prevState => ({
+  cards: prevState.cards.concat(card)
+  }));
+};
+
+    render() {
+        return (
+            <div>
+                <Form onSubmit={this.addNewCard}/>
+                <CardList cards={this.state.cards}/>
+            </div>
+        );
+    }
+}
+
+ReactDOM.render(<App/>, mountNode)
+
+<!-- -->
+
+const Stars = (props) => {
+    return (
+        <div className="col-5">
+            {_.range(props.numberOfStars).map(number => <i key={number} className="fa fa-star"></i>)}
+        </div>);
+}
+
+const ReDraw = (props) => {
+    return (
+        <div className="col-12 redraw">
+            <button className="btn btn-warning" type="button" onClick={props.reDrawGame} disabled={props.redrawCount === 0}>
+            <i className="fa fa-refresh"></i> {props.redrawCount}
+            </button>
+        </div>);
+}
+
+const DoneFrame = (props) => {
+    return (
+        <div className="col-12">
+            <h3>{props.doneStatus}</h3>
+        </div>);
+}
+
+const Answer = (props) => {
+    return (<div className="col-3">
+        {props.selectedNumbers.map((number, i) =>
+            <span
+                onClick={() => props.unselectNumber(number)}
+                key={i}>{number}
+  </span>)}
+    </div>);
+}
+
+const Button = (props) => {
+    let button;
+    switch (props.answerIsCorrect) {
+        case true:
+            button = <button onClick={props.acceptAnswer} className="btn btn-success" type="button"><i className="fa fa-check"></i></button>
+            break;
+
+        case false:
+            button = <button className="btn btn-danger"><i className="fa fa-times"></i></button>
+            break;
+
+        default:
+            button = <button className="btn" type="button" onClick={props.checkAnswer}
+                             disabled={props.selectedNumbers.length === 0}>=</button>
+            break;
+    }
+    return (<div className="col-4">
+        {button}
+    </div>);
+}
+
+const Numbers = (props) => {
+
+    const numberClassName = (number) => {
+        if (props.selectedNumbers.indexOf(number) >= 0) {
+            return 'selected';
+        }
+        if (props.usedNumbers.indexOf(number) >= 0) {
+            return 'used';
+        }
+    };
+
+    return (
+        <div className="card text-center col-12">
+            <div>
+                {Numbers.list.map((number) => <span onClick={() => props.onNumberSelect(number)}
+                                                    className={numberClassName(number)} key={number}>{number}</span>)}
+            </div>
+        </div>
+    );
+}
+
+Numbers.list = _.range(1, 10);
+
+class Game extends React.Component {
+    state = {
+        numberOfStars: 1 + Math.floor(Math.random() * 9),
+        selectedNumbers: [],
+        answerIsCorrect: null,
+        usedNumbers: [],
+        redrawCount: 5,
+        doneStatus: null,
+    };
+
+    acceptAnswer = () => {
+    	this.setState(prevState => ({
+      usedNumbers: prevState.usedNumbers.concat(prevState.selectedNumbers),
+      selectedNumbers: [],
+      answerIsCorrect: null,
+      numberOfStars: 1 + Math.floor(Math.random() * 9),
+      }))
+    }
+
+    reDrawGame = () => {
+    const pastCount = this.state.numberOfStars;
+
+    	this.setState(prevState => ({
+      answerIsCorrect: null,
+      numberOfStars: 1 + Math.floor(Math.random() * 9),
+      redrawCount: (prevState.redrawCount === 0) ? 0 : prevState.redrawCount - 1,
+      }));
+
+      if(pastCount === this.state.numberOfStars)
+      {
+        this.setState(prevState => ({
+        numberOfStars: 1 + Math.floor(Math.random() * 9)
+        }));
+      }
+
+    }
+
+    onNumberSelect = (number) => {
+        if (this.state.selectedNumbers.indexOf(number) >= 0) {
+            return false;
+        }
+
+        if (this.state.usedNumbers.indexOf(number) >= 0) {
+            return false;
+        }
+
+        this.setState(prevState => ({
+        answerIsCorrect: null,
+            selectedNumbers: prevState.selectedNumbers.concat(number)
+        }));
+    }
+    unselectNumber = (clickedNumber) => {
+        this.setState(prevState => ({
+            selectedNumbers: prevState.selectedNumbers.filter(number => number !== clickedNumber)
+        }));
+    }
+
+    checkAnswer = () => {
+        this.setState(prevState => ({
+        answerIsCorrect: null,
+            answerIsCorrect: prevState.numberOfStars === prevState.selectedNumbers.reduce((acc, n) => acc + n, 0)
+        }));
+    }
+
+
+    render() {
+        return (
+            <div className="container">
+                <h3>Play Nine</h3>
+                <hr/>
+                <div className="row">
+                    <Stars numberOfStars={this.state.numberOfStars}/>
+                    <Button acceptAnswer={this.acceptAnswer} checkAnswer={this.checkAnswer} selectedNumbers={this.state.selectedNumbers} answerIsCorrect={this.state.answerIsCorrect}/>
+                    <ReDraw reDrawGame={this.reDrawGame} redrawCount={this.state.redrawCount}/>
+                    <Answer unselectNumber={this.unselectNumber} selectedNumbers={this.state.selectedNumbers}/>
+                </div>
+                <hr/>
+                <div className="row">
+                {this.state.doneStatus ? <DoneFrame doneStatus={this.state.doneStatus}/> : <Numbers usedNumbers ={this.state.usedNumbers} onNumberSelect={this.onNumberSelect} selectedNumbers={this.state.selectedNumbers}/>}
+
+                </div>
+            </div>
         );
     }
 }
@@ -90,11 +271,47 @@ class App extends React.Component {
     render() {
         return (
             <div>
-                <Form/>
-                <CardList cards={data}/>
+                <Game/>
             </div>
         );
     }
 }
 
-ReactDOM.render(<App/>, mountNode);
+ReactDOM.render(<App/>, mountNode)
+
+<!-- Styles -->
+
+.mountNode {
+  color: #000;
+}
+
+.fa-star
+{
+  margin: 0.5em;
+  font-size: 24px;
+}
+.redraw{
+      left: -22px;
+  text-align: center;
+}
+span{
+  display: inline-block;
+  margin: 0.5em;
+  text-align: center;
+  border-radius: 50%;
+  width: 24px;
+  background-color: #ccc;
+  cursor: pointer;
+}
+
+.selected{
+  background-color: #eee;
+  color: #ddd;
+  cursor: not-allowed;
+}
+
+.used{
+  background-color: #aaddaa;
+  color: #99bb99;
+  cursor: not-allowed;
+}
